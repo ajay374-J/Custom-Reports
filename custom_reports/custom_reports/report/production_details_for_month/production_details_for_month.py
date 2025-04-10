@@ -91,7 +91,7 @@ def get_data(filters):
 	items=frappe.db.sql("""select distinct(si.batch_no) as batch from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 {0}""".format(condition),as_dict=1)
 	data=[]
 	for item in items:
-		if item.batch:
+		if item.get("batch"):
 			raw=0
 			finish_good=0
 			recovery=0
