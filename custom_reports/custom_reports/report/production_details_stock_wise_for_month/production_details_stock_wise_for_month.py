@@ -99,38 +99,38 @@ def get_data(filters):
 	items=frappe.db.sql("""select distinct(si.batch_no) as batch from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 {0}""".format(condition),as_dict=1)
 	data=[]
 	for item in items:
-		
-		parents=frappe.db.sql("""select distinct(si.parent) as parent from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' {1}""".format(item.get("batch"),condition),as_dict=1)
-		for pa in parents:
-			raw=0
-			finish_good=0
-			rejected=0
-			act=0
-			values={}
-			doc=frappe.get_doc("Stock Entry",pa.get("parent"))
-			
-			values.update({"batch":item.get("batch"),"rate":0,"stock_entry":doc.name,"rate":0})
-			for i in doc.items:
-				qty=frappe.db.sql("""select sum(si.qty) as qty ,avg(si.basic_rate) as rate,sum(se) from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' and si.item_code='{1}' '{2}'""".format(item.get("batch"),i.item_code,pa.get("parent"),condition),as_dict=1)
-				for val in qty:
-					values.update({
-						str(i.item_name):flt(values.get(str(i.item_name)))+flt(val.get("qty")),
-						"rate":flt(values.get("rate"))+flt(val.get("rate"))
+		if item.batch:
+			parents=frappe.db.sql("""select distinct(si.parent) as parent from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' {1}""".format(item.get("batch"),condition),as_dict=1)
+			for pa in parents:
+				raw=0
+				finish_good=0
+				rejected=0
+				act=0
+				values={}
+				doc=frappe.get_doc("Stock Entry",pa.get("parent"))
+				
+				values.update({"batch":item.get("batch"),"rate":0,"stock_entry":doc.name,"rate":0})
+				for i in doc.items:
+					qty=frappe.db.sql("""select sum(si.qty) as qty ,avg(si.basic_rate) as rate,sum(se) from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' and si.item_code='{1}' '{2}'""".format(item.get("batch"),i.item_code,pa.get("parent"),condition),as_dict=1)
+					for val in qty:
+						values.update({
+							str(i.item_name):flt(values.get(str(i.item_name)))+flt(val.get("qty")),
+							"rate":flt(values.get("rate"))+flt(val.get("rate"))
+						})
+						
+						
+				raw=raw+doc.total_input_qty
+				finish_good=finish_good+doc.total_output_qty
+				rejected=raw-doc.total_in_over_qty
+				act=finish_good+rejected
+				values.update({
+					"total":raw,
+					"finish_total":finish_good,
+					"rejected":rejected,
+					"ma":0,
+					"act":act
 					})
-					
-					
-			raw=raw+doc.total_input_qty
-			finish_good=finish_good+doc.total_output_qty
-			rejected=raw-doc.total_in_over_qty
-			act=finish_good+rejected
-			values.update({
-				"total":raw,
-				"finish_total":finish_good,
-				"rejected":rejected,
-				"ma":0,
-				"act":act
-				})
-			data.append(values)
+				data.append(values)
 	return data
 	
 		
