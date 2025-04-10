@@ -29,7 +29,7 @@ def get_columns(filters):
             "width": 200,
         }
 	]
-	items=frappe.db.sql("""select distinct(si.item_name) as item_name from `tabStock Entry` se join `tabStock Entry Item` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 {0}""".format(condition),as_dict=1)
+	items=frappe.db.sql("""select distinct(si.item_name) as item_name from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 {0}""".format(condition),as_dict=1)
 	for item in items:
 		columns.append({
 			{
@@ -88,7 +88,7 @@ def get_data(filters):
 	condition=""
 	if filters.from_date and filters.to_date:
 		condition+="and se.transaction_date>='{0}' and se.transaction_date<='{1}'".format(filters.from_date ,filters.to_date)
-	items=frappe.db.sql("""select distinct(si.batch_no) as batch from `tabStock Entry` se join `tabStock Entry Item` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 {0}""".format(condition),as_dict=1)
+	items=frappe.db.sql("""select distinct(si.batch_no) as batch from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 {0}""".format(condition),as_dict=1)
 	data=[]
 	for item in items:
 		raw=0
@@ -97,14 +97,14 @@ def get_data(filters):
 		act=0
 		ma=0
 		values={}
-		parents=frappe.db.sql("""select distinct(si.parent) as parent from `tabStock Entry` se join `tabStock Entry Item` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' {1}""".format(item.get("batch"),condition),as_dict=1)
+		parents=frappe.db.sql("""select distinct(si.parent) as parent from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' {1}""".format(item.get("batch"),condition),as_dict=1)
 		for pa in parents:
 
 			doc=frappe.get_doc("Stock Entry",pa.get("parent"))
 			
 			values.update({"batch":item.get("batch")})
 			for i in doc.items:
-				qty=frappe.db.sql("""select sum(si.qty) as qty ,avg(si.rate) as rate from `tabStock Entry` se join `tabStock Entry Item` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' and si.item_code='{1}' '{2}'""".format(item.get("batch"),i.item_code,pa.get("parent"),condition),as_dict=1)
+				qty=frappe.db.sql("""select sum(si.qty) as qty ,avg(si.rate) as rate from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' and si.item_code='{1}' '{2}'""".format(item.get("batch"),i.item_code,pa.get("parent"),condition),as_dict=1)
 				for val in qty:
 					data.update({
 						str(i.item_name):flt(values.get(str(i.item_name)))+val.get("qty"),
