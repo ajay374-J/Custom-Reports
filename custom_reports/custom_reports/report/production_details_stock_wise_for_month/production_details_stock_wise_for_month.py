@@ -111,11 +111,16 @@ def get_data(filters):
 				
 				values.update({"batch":item.get("batch"),"rate":0,"stock_entry":doc.name})
 				for i in doc.items:
-					qty=frappe.db.sql("""select sum(si.qty) as qty ,avg(si.basic_rate) as rate from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' and si.item_code='{1}' and se.name='{2}' {3}""".format(item.get("batch"),i.item_code,pa.get("parent"),condition),as_dict=1)
-					for val in qty:
+					qty+=i.qty
+					rate=frappe.db.sql("""select avg(si.basic_rate) as rate  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' and si.item_code='{1}' and se.name='{2}' {3}""".format(item.get("batch"),i.item_code,pa.get("parent"),condition),as_dict=1)
+					
+					
+					values.update({
+						str(i.item_name):flt(values.get(str(i.item_name)))+flt(i.get("qty")),
+					})
+					for ra in rate:
 						values.update({
-							str(i.item_name):flt(values.get(str(i.item_name)))+flt(val.get("qty")),
-							"rate":flt(values.get("rate"))+flt(val.get("rate"))
+							"rate":flt(values.get("rate"))+flt(ra.get("rate"))
 						})
 						
 						
