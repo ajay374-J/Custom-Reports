@@ -31,14 +31,14 @@ def get_columns(filters):
 	]
 	items=frappe.db.sql("""select distinct(si.item_name) as item_name from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 {0}""".format(condition),as_dict=1)
 	for item in items:
-		columns.append({
+		columns.append(
 			{
             "label": frappe._(str(item.item_name)),
             "fieldtype": "Float",
             "fieldname": str(item.item_name),
             "width": 200,
         }
-		})
+		)
 	columns.extend([
 		{
             "label": frappe._("Total Raw"),
