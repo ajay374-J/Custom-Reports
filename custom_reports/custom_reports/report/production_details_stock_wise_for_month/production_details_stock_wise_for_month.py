@@ -78,6 +78,12 @@ def get_columns(filters):
             "fieldname": "act",
             "width": 200,
         },
+		{
+            "label": frappe._("Price"),
+            "fieldtype": "Currency",
+            "fieldname": "rate",
+            "width": 200,
+        },
 	])
        
 	return columns
