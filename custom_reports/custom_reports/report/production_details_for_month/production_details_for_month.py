@@ -107,8 +107,8 @@ def get_data(filters):
 				qty=frappe.db.sql("""select sum(si.qty) as qty ,avg(si.basic_rate) as rate from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' and si.item_code='{1}' '{2}'""".format(item.get("batch"),i.item_code,pa.get("parent"),condition),as_dict=1)
 				for val in qty:
 					values.update({
-						str(i.item_name):flt(values.get(str(i.item_name)))+val.get("qty"),
-						"rate":flt(values.get("rate"))+val.get("rate")
+						str(i.item_name):flt(values.get(str(i.item_name)))flt(val.get("qty")),
+						"rate":flt(values.get("rate"))+flt(val.get("rate"))
 					})
 			raw=raw+doc.total_input_qty
 			finish_good=finish_good+doc.total_output_qty
