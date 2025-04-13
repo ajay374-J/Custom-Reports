@@ -37,7 +37,7 @@ def get_columns(filters):
         }
 
 	]
-	items=frappe.db.sql("""select distinct(si.item_name) as item_name from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 {0}""".format(condition),as_dict=1)
+	items=frappe.db.sql("""select distinct(si.item_name) as item_name from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 {0} and t_warehouse is not set""".format(condition),as_dict=1)
 	for item in items:
 		columns.append(
 			{
@@ -64,12 +64,6 @@ def get_columns(filters):
             "label": frappe._("Rejected"),
             "fieldtype": "Float",
             "fieldname": "rejected",
-            "width": 200,
-        },
-		{
-            "label": frappe._("MA"),
-            "fieldtype": "Float",
-            "fieldname": "ma",
             "width": 200,
         },
 		{
@@ -110,6 +104,7 @@ def get_data(filters):
 				doc=frappe.get_doc("Stock Entry",pa.get("parent"))
 				
 				values.update({"batch":item.get("batch"),"rate":0,"stock_entry":doc.name})
+				qty=0
 				for i in doc.items:
 					qty+=i.qty
 					rate=frappe.db.sql("""select avg(si.basic_rate) as rate  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' and si.item_code='{1}' and se.name='{2}' {3}""".format(item.get("batch"),i.item_code,pa.get("parent"),condition),as_dict=1)

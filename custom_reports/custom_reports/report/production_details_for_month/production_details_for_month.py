@@ -29,7 +29,7 @@ def get_columns(filters):
             "width": 200,
         }
 	]
-	items=frappe.db.sql("""select distinct(si.item_name) as item_name from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 {0}""".format(condition),as_dict=1)
+	items=frappe.db.sql("""select distinct(si.item_name) as item_name from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1  and t_warehouse is not set {0}""".format(condition),as_dict=1)
 	for item in items:
 		columns.append(
 			{
@@ -41,9 +41,16 @@ def get_columns(filters):
 		)
 	columns.extend([
 		{
-            "label": frappe._("Total Raw"),
+            "label": frappe._("Total IN"),
             "fieldtype": "Float",
             "fieldname": "total",
+            "width": 200,
+        },
+		{
+            "label": frappe._("Alloy"),
+            "fieldtype": "Link",
+            "fieldname": "alloy",
+            "options": "Item",
             "width": 200,
         },
 		{
@@ -59,15 +66,27 @@ def get_columns(filters):
             "width": 200,
         },
 		{
-            "label": frappe._("MA"),
-            "fieldtype": "Float",
-            "fieldname": "ma",
-            "width": 200,
-        },
-		{
             "label": frappe._("ACT"),
             "fieldtype": "Float",
             "fieldname": "act",
+            "width": 200,
+        },
+		{
+            "label": frappe._("Exp"),
+            "fieldtype": "Float",
+            "fieldname": "exp",
+            "width": 200,
+        },
+		{
+            "label": frappe._("Diff"),
+            "fieldtype": "Float",
+            "fieldname": "diff",
+            "width": 200,
+        },
+		{
+            "label": frappe._("Supervisor"),
+            "fieldtype": "Data",
+            "fieldname": "supervisor",
             "width": 200,
         },
 		{
@@ -96,13 +115,19 @@ def get_data(filters):
 			finish_good=0
 			recovery=0
 			act=0
-			ma=0
+			reject=0
+			diff=0
+			exp=0
 			values={}
 			parents=frappe.db.sql("""select distinct(si.parent) as parent from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' {1}""".format(item.get("batch"),condition),as_dict=1)
+			supervisor=""
 			for pa in parents:
 
 				doc=frappe.get_doc("Stock Entry",pa.get("parent"))
 				
+				for su in doc.supervisor:
+					supervisor+=str(su.name1)+","
+
 				values.update({"batch":item.get("batch")})
 				qty=0
 				for i in doc.items:
@@ -117,18 +142,45 @@ def get_data(filters):
 						values.update({
 							"rate":flt(values.get("rate"))+flt(ra.get("rate"))
 						})
-				raw=raw+doc.total_input_qty
-				finish_good=finish_good+doc.total_output_qty
-				rejected=raw-doc.total_in_over_qty
-				act=finish_good+rejected
+					
+				rejected=frappe.db.sql("""select sum(si.qty) as qty  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' and se.name='{1}' and si.item_in_overall=1 and si.is_scrap_item=1 {2}""".format(item.get("batch"),pa.get("parent"),condition),as_dict=1)
+				# item=frappe.db.get_value("")
+				if rejected:
+					reject=rejected[0].get("qty")
+				raw=flt(raw)+flt(doc.total_input_qty)
+				finish_good=flt(finish_good)+flt(doc.total_output_qty)
+				rejected+=flt(reject)
+				exp+=flt(doc.custom_total_expected_qty)
+				act+=flt(doc.total_in_over_qty)
+				diff=act-exp
 			values.update({
 				"total":raw,
 				"finish_total":finish_good,
 				"rejected":recovery,
-				"ma":ma,
-				"act":act
+				"act":act,
+				"exp":exp,
+				"diff":diff,
+				"supervisor":supervisor
 				})
-			data.append(values)
+			data.append(values)	
+	
+
+	result = {"batch":"<b>Total</b>"}
+
+	for row in data:
+		for k, v in row.items():
+			if isinstance(v, float):
+				result[k] += v
+
+	# If you want it as a regular dict:
+	result = dict(result)
+	data.append(result)
+	data.append({})
+	rate_dic={"batch":"<b>PRICE/MT</b>"}
+	rates=frappe.db.sql("select item_name,avg(basic_rate) as rate from `tabStock Entry Details` where se.stock_entry_type='Manufacture' and se.docstatus=1 group by item_name")
+	for i in rates:
+		rate_dic.append(str(i.item_name):i.get("rate"))
+
 	return data
 	
 		
