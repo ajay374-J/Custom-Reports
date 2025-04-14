@@ -185,7 +185,7 @@ def get_data(filters):
 	data.append(result)
 	data.append({})
 	rate_dic={"batch":"<b>PRICE/MT</b>"}
-	rates=frappe.db.sql("select item_name,avg(basic_rate) as rate from `tabStock Entry Detail` where se.stock_entry_type='Manufacture' and se.docstatus=1 group by item_name")
+	rates=frappe.db.sql("select item_name,avg(basic_rate) as rate from `tabStock Entry Detail` where stock_entry_type='Manufacture' and docstatus=1 group by item_name")
 	for i in rates:
 		rate_dic.update({str(i.item_name):i.get("rate")})
 
