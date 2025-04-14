@@ -165,12 +165,20 @@ def get_data(filters):
 			data.append(values)	
 	
 
-	result = {"batch":"<b>Total</b>"}
+	from collections import defaultdict
+
+	result = defaultdict(float)
 
 	for row in data:
 		for k, v in row.items():
 			if isinstance(v, float):
-				result[k] += v
+				result[str(k)] += v
+
+	# Add your custom label after aggregation
+	result["batch"] = "<b>Total</b>"
+
+	# Convert to dict if needed
+	result = dict(result)
 
 	# If you want it as a regular dict:
 	result = dict(result)
