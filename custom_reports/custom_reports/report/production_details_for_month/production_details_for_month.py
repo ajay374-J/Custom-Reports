@@ -187,11 +187,24 @@ def get_data(filters):
 	# If you want it as a regular dict:
 	result = dict(result)
 	data.append(result)
-	data.append({})
-	rate_dic={"batch":"<b>PRICE/MT</b>"}
-	rates=frappe.db.sql("select si.item_name,avg(basic_rate) as rate from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 group by item_name {0}".format(condition),as_dict=1)
-	for i in rates:
-		rate_dic.update({str(i.get("item_name")):i.get("rate")})
+	rate_dic={"fg_item":"<b>PRICE/MT</b>"}
+	rates = frappe.db.sql("""
+    SELECT item_name, AVG(basic_rate) AS rate
+    FROM `tabStock Entry` se
+    JOIN `tabStock Entry Detail` si ON se.name = si.parent
+    WHERE se.stock_entry_type = 'Manufacture' AND se.docstatus = 1 {0}
+    GROUP BY item_name
+	""".format(condition), as_dict=1)
+
+	print("############################# RATES RAW:", rates)
+
+	for jk in rates:
+		item = str(jk.get("item_name"))
+		rate = jk.get("rate") or 0
+		rate_dic[item] = rate
+
+	print("########## FINAL RATE DIC:", rate_dic)
+
 	data.append(rate_dic)
 
 	return data
