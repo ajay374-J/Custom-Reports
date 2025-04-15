@@ -126,7 +126,8 @@ def get_data(filters):
 				doc=frappe.get_doc("Stock Entry",pa.get("parent"))
 				
 				for su in doc.supervisor:
-					supervisor+=str(su.name1)+","
+					employee_name=frappe.db.get_value("Employee",su.name1)
+					supervisor+=str(employee_name)+","
 
 				values.update({"batch":item.get("batch")})
 				qty=0
@@ -141,6 +142,10 @@ def get_data(filters):
 					for ra in rate:
 						values.update({
 							"rate":flt(values.get("rate"))+flt(ra.get("rate"))
+						})
+					if i.batch_no  and i.target_warehouse:
+						values.update({
+							"alloy":i.item_code
 						})
 					
 				rejected=frappe.db.sql("""select sum(si.qty) as qty  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' and se.name='{1}' and si.item_in_overall=1 and si.is_scrap_item=1 {2}""".format(item.get("batch"),pa.get("parent"),condition),as_dict=1)
@@ -185,7 +190,7 @@ def get_data(filters):
 	data.append(result)
 	data.append({})
 	rate_dic={"batch":"<b>PRICE/MT</b>"}
-	rates=frappe.db.sql("select item_name,avg(basic_rate) as rate from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 group by item_name",as_dict=1)
+	rates=frappe.db.sql("select item_name,avg(basic_rate) as rate from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 group by item_name {3}".format(condition),as_dict=1)
 	for i in rates:
 		rate_dic.update({str(i.item_name):i.get("rate")})
 	data.append(rate_dic)
