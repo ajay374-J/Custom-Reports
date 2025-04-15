@@ -142,7 +142,7 @@ def get_data(filters):
 						values.update({
 							"rate":flt(values.get("rate"))+flt(ra.get("rate"))
 						})
-					if i.batch_no  and i.target_warehouse:
+					if i.batch_no  and i.t_warehouse:
 						values.update({
 							"alloy":i.item_code
 						})
