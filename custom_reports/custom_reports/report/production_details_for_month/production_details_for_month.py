@@ -125,7 +125,7 @@ def get_data(filters):
 				doc=frappe.get_doc("Stock Entry",pa.get("parent"))
 				
 				for su in doc.supervisor:
-					employee_name=frappe.db.get_value("Employee",su.name1)
+					employee_name=frappe.db.get_value("Employee",su.name1,"employee_name")
 					supervisor+=str(employee_name)+","
 
 				values.update({"batch":item.get("batch"),"rate":0})

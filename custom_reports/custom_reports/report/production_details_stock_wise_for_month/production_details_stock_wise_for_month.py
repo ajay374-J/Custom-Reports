@@ -106,7 +106,7 @@ def get_data(filters):
 	condition=""
 	if filters.from_date and filters.to_date:
 		condition+="and se.posting_date>='{0}' and se.posting_date<='{1}'".format(filters.from_date ,filters.to_date)
-	items=frappe.db.sql("""select distinct(si.item_code) as item from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 {0}""".format(condition),as_dict=1)
+	items=frappe.db.sql("""select distinct(si.item_code) as item from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.is_finished_item =1""".format(condition),as_dict=1)
 	data=[]
 	for item in items:
 		if item.get("item"):
@@ -124,7 +124,7 @@ def get_data(filters):
 				doc=frappe.get_doc("Stock Entry",pa.get("parent"))
 				
 				for su in doc.supervisor:
-					employee_name=frappe.db.get_value("Employee",su.name1)
+					employee_name=frappe.db.get_value("Employee",su.name1,"employee_name")
 					supervisor+=str(employee_name)+","
 
 				values.update({"fg_item":item.get("item"),"rate":0})
@@ -178,7 +178,7 @@ def get_data(filters):
 				result[str(k)] += v
 
 	# Add your custom label after aggregation
-	result["batch"] = "<b>Total</b>"
+	result["fg_item"] = "<b>Total</b>"
 
 	# Convert to dict if needed
 	result = dict(result)
@@ -187,8 +187,9 @@ def get_data(filters):
 	result = dict(result)
 	data.append(result)
 	data.append({})
-	rate_dic={"batch":"<b>PRICE/MT</b>"}
+	rate_dic={"fg_item":"<b>PRICE/MT</b>"}
 	rates=frappe.db.sql("select item_name,avg(basic_rate) as rate from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 group by item_name {0}".format(condition),as_dict=1)
+	print("#############################",rates)
 	for i in rates:
 		rate_dic.update({str(i.item_name):i.get("rate")})
 	data.append(rate_dic)
