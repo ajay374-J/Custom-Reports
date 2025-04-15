@@ -23,9 +23,8 @@ def get_columns(filters):
 	columns= [
         {
             "label": frappe._("Batch No."),
-            "fieldtype": "Link",
+            "fieldtype": "Data",
             "fieldname": "batch",
-            "options": "Batch",
             "width": 200,
         }
 	]
@@ -129,7 +128,7 @@ def get_data(filters):
 					employee_name=frappe.db.get_value("Employee",su.name1)
 					supervisor+=str(employee_name)+","
 
-				values.update({"batch":item.get("batch")})
+				values.update({"batch":item.get("batch"),"rate":0})
 				qty=0
 				for i in doc.items:
 					qty+=i.qty

@@ -23,9 +23,8 @@ def get_columns(filters):
 	columns= [
         {
             "label": frappe._("FG Item"),
-            "fieldtype": "Link",
+            "fieldtype": "Data",
             "fieldname": "fg_item",
-            "options": "Item",
             "width": 200,
         }
 	]
@@ -46,13 +45,13 @@ def get_columns(filters):
             "fieldname": "total",
             "width": 200,
         },
-		{
-            "label": frappe._("Alloy"),
-            "fieldtype": "Link",
-            "fieldname": "alloy",
-            "options": "Item",
-            "width": 200,
-        },
+		# {
+        #     "label": frappe._("Alloy"),
+        #     "fieldtype": "Link",
+        #     "fieldname": "alloy",
+        #     "options": "Item",
+        #     "width": 200,
+        # },
 		{
             "label": frappe._("Finished Good"),
             "fieldtype": "Float",
@@ -107,19 +106,18 @@ def get_data(filters):
 	condition=""
 	if filters.from_date and filters.to_date:
 		condition+="and se.posting_date>='{0}' and se.posting_date<='{1}'".format(filters.from_date ,filters.to_date)
-	items=frappe.db.sql("""select distinct(si.item_code) as batch from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 {0}""".format(condition),as_dict=1)
+	items=frappe.db.sql("""select distinct(si.item_code) as item from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 {0}""".format(condition),as_dict=1)
 	data=[]
 	for item in items:
-		if item.get("batch"):
+		if item.get("item"):
 			raw=0
 			finish_good=0
-			recovery=0
 			act=0
 			reject=0
 			diff=0
 			exp=0
 			values={}
-			parents=frappe.db.sql("""select distinct(si.parent) as parent from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' {1}""".format(item.get("batch"),condition),as_dict=1)
+			parents=frappe.db.sql("""select distinct(si.parent) as parent from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.item_code='{0}' {1}""".format(item.get("item"),condition),as_dict=1)
 			supervisor=""
 			for pa in parents:
 
@@ -129,11 +127,11 @@ def get_data(filters):
 					employee_name=frappe.db.get_value("Employee",su.name1)
 					supervisor+=str(employee_name)+","
 
-				values.update({"batch":item.get("batch")})
+				values.update({"fg_item":item.get("item"),"rate":0})
 				qty=0
 				for i in doc.items:
 					qty+=i.qty
-					rate=frappe.db.sql("""select avg(si.basic_rate) as rate  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' and si.item_code='{1}' and se.name='{2}' {3}""".format(item.get("batch"),i.item_code,pa.get("parent"),condition),as_dict=1)
+					rate=frappe.db.sql("""select avg(si.basic_rate) as rate  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.item_code='{0}' and se.name='{1}' {2}""".format(i.item_code,pa.get("parent"),condition),as_dict=1)
 					
 					
 					values.update({
@@ -143,12 +141,12 @@ def get_data(filters):
 						values.update({
 							"rate":flt(values.get("rate"))+flt(ra.get("rate"))
 						})
-					if i.batch_no  and i.target_warehouse:
-						values.update({
-							"alloy":i.item_code
-						})
+					# if i.batch_no  and i.target_warehouse:
+					# 	values.update({
+					# 		"alloy":i.item_code
+					# 	})
 					
-				rejected=frappe.db.sql("""select sum(si.qty) as qty  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' and se.name='{1}' and si.item_in_overall=1 and si.is_scrap_item=1 {2}""".format(item.get("batch"),pa.get("parent"),condition),as_dict=1)
+				rejected=frappe.db.sql("""select sum(si.qty) as qty  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1  and se.name='{0}' and si.item_in_overall=1 and si.is_scrap_item=1 {1}""".format(pa.get("parent"),condition),as_dict=1)
 				# item=frappe.db.get_value("")
 				if rejected:
 					rejects=rejected[0].get("qty")
