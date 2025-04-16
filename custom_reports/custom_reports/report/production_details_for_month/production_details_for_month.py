@@ -94,6 +94,12 @@ def get_columns(filters):
             "fieldname": "rate",
             "width": 200,
         },
+		{
+            "label": frappe._("FG Total Value"),
+            "fieldtype": "Currency",
+            "fieldname": "tot_value",
+            "width": 200,
+        },
 	])
        
 	return columns
@@ -144,7 +150,6 @@ def get_data(filters):
 						})
 					
 				rejected=frappe.db.sql("""select sum(si.qty) as qty  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' and se.name='{1}' and si.item_in_overall=1 and si.is_scrap_item=1 {2}""".format(item.get("batch"),pa.get("parent"),condition),as_dict=1)
-				# item=frappe.db.get_value("")
 				if rejected:
 					rejects=rejected[0].get("qty")
 				raw=flt(raw)+flt(doc.total_input_qty)
@@ -153,11 +158,12 @@ def get_data(filters):
 				exp+=flt(doc.custom_total_expected_qty)
 				act+=flt(doc.total_in_over_qty)
 				diff=act-exp
+			frate=0
 			rate=frappe.db.sql("""select avg(si.basic_rate) as rate  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' {1}""".format(item.get("batch"),condition),as_dict=1)
 			for ra in rate:
-
+				frate=flt(values.get("rate"))+flt(ra.get("rate"))
 				values.update({
-					"rate":flt(values.get("rate"))+flt(ra.get("rate"))
+					"rate":frate
 				})
 			values.update({
 				"total":raw,
@@ -166,7 +172,8 @@ def get_data(filters):
 				"act":act,
 				"exp":exp,
 				"diff":diff,
-				"supervisor":supervisor
+				"supervisor":supervisor,
+				"tot_value":flt(finish_good)*flt(frate)
 				})
 			data.append(values)	
 	
@@ -198,16 +205,27 @@ def get_data(filters):
     GROUP BY item_name
 	""".format(condition), as_dict=1)
 
-	print("############################# RATES RAW:", rates)
 
 	for jk in rates:
 		item = str(jk.get("item_name"))
 		rate = jk.get("rate") or 0
 		rate_dic[item] = rate
 
-	print("########## FINAL RATE DIC:", rate_dic)
 
 	data.append(rate_dic)
+	total_value={"fg_item":"<b>Total Value</b>"}
+
+
+	dict1=data[-2]
+	dict2=data[-1]
+	
+
+	for key in dict1:
+		if key == 'z':
+			total_value[key] = str(dict1[key]) + str(dict2[key])
+		else:
+			total_value[key] = dict1[key] * dict2[key]
+	data.append(total_value)
 
 	return data
 	
