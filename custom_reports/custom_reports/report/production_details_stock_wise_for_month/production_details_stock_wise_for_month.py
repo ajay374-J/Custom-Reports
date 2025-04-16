@@ -225,10 +225,10 @@ def get_data(filters):
 
 	for key in dict1:
 		if key in dict2:
-			if key == 'z':
-				total_value[key] = str(dict1[key]) + str(dict2[key])
+			if key == 'fg_item':
+				pass
 			else:
-				total_value[key] = dict1[key] * dict2[key]
+				total_value[key] = flt(dict1[key]) * flt(dict2[key])
 	data.append(total_value)
 
 	return data
