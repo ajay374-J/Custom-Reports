@@ -121,7 +121,7 @@ def get_data(filters):
 			supervisor=""
 			values.update({"fg_item":item.get("item"),"rate":0})
 			for pa in parents:
-
+				
 				doc=frappe.get_doc("Stock Entry",pa.get("parent"))
 				
 				for su in doc.supervisor:
@@ -129,13 +129,15 @@ def get_data(filters):
 					supervisor+=str(employee_name)+","
 
 				qty=0
+
 				for i in doc.items:
-					qty+=i.qty
-					
-					
-					values.update({
-						str(i.item_name):flt(values.get(str(i.item_name)))+flt(i.get("qty")),
-					})
+					if i.item_in_overall==0 and i.is_scrap_item==0 and i.is_finished_item==0:
+						qty+=i.qty
+						
+						
+						values.update({
+							str(i.item_name):flt(values.get(str(i.item_name)))+flt(i.get("qty")),
+						})
 
 					# if i.batch_no  and i.target_warehouse:
 					# 	values.update({
