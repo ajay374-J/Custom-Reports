@@ -216,7 +216,7 @@ def get_data(filters):
 
 
 	data.append(rate_dic)
-	total_value={"fg_item":"<b>Total Value</b>"}
+	total_value={"fg_item":"<b>Total Value</b>","rate":0}
 
 
 	dict1=data[-2]

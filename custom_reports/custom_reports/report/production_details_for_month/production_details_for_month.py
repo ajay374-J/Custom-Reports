@@ -196,7 +196,7 @@ def get_data(filters):
 	# If you want it as a regular dict:
 	result = dict(result)
 	data.append(result)
-	rate_dic={"batch":"<b>PRICE/MT</b>"}
+	rate_dic={"batch":"<b>PRICE/MT</b>","rate":0}
 	rates = frappe.db.sql("""
     SELECT item_name, AVG(basic_rate) AS rate
     FROM `tabStock Entry` se
