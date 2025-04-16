@@ -28,7 +28,7 @@ def get_columns(filters):
             "width": 200,
         }
 	]
-	items=frappe.db.sql("""select distinct(si.item_name) as item_name from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1  and t_warehouse is NULL and (si.item_in_overall=0 and si.is_scrap_item=0 or si.item_in_overall=1)  {0}""".format(condition),as_dict=1)
+	items=frappe.db.sql("""select distinct(si.item_name) as item_name from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1  and t_warehouse is NULL and (si.item_in_overall=0 and si.is_scrap_item=0)  {0}""".format(condition),as_dict=1)
 	for item in items:
 		columns.append(
 			{
