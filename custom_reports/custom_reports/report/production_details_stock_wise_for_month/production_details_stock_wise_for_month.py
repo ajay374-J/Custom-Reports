@@ -112,6 +112,8 @@ def get_data(filters):
 	condition=""
 	if filters.from_date and filters.to_date:
 		condition+="and se.posting_date>='{0}' and se.posting_date<='{1}'".format(filters.from_date ,filters.to_date)
+	if filters.item:
+		condition+="and si.item_code='{0}'".format(filters.item)
 	items=frappe.db.sql("""select distinct(si.item_code) as item from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.is_finished_item =1""".format(condition),as_dict=1)
 	data=[]
 	for item in items:
@@ -123,7 +125,7 @@ def get_data(filters):
 			diff=0
 			exp=0
 			values={}
-			parents=frappe.db.sql("""select distinct(si.parent) as parent from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.item_code='{0}' {1}""".format(item.get("item"),condition),as_dict=1)
+			parents=frappe.db.sql("""select distinct(si.parent) as parent from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.item_code='{0}' and si.is_finished_item =1  {1}""".format(item.get("item"),condition),as_dict=1)
 			supervisor=""
 			values.update({"fg_item":item.get("item"),"rate":0})
 			for pa in parents:

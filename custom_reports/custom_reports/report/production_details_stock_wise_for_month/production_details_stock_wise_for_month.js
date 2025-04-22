@@ -14,6 +14,12 @@ frappe.query_reports["Production Details Stock Wise For Month"] = {
             "label": __("To Date"),
             "fieldtype": "Date",
 			"reqd":1
+        },
+        {
+            "fieldname": "item",
+            "label": __("FG Item"),
+            "fieldtype": "Link",
+            "options":"Item"
         }
 	]
 };

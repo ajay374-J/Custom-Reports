@@ -112,10 +112,15 @@ def get_data(filters):
 	condition=""
 	if filters.from_date and filters.to_date:
 		condition+="and se.posting_date>='{0}' and se.posting_date<='{1}'".format(filters.from_date ,filters.to_date)
-	items=frappe.db.sql("""select distinct(si.batch_no) as batch from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1  {0}""".format(condition),as_dict=1)
+	if filters.item:
+		condition+="and si.item_code='{0}'".format(filters.item)
+	if filters.batch:
+		condition+="and si.batch_no='{0}'".format(filters.batch)
+
+	items=frappe.db.sql("""select se.name  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.is_finished_item =1  {0}""".format(condition),as_dict=1)
 	data=[]
 	for item in items:
-		if item.get("batch"):
+		
 			raw=0
 			finish_good=0
 			act=0
@@ -123,38 +128,43 @@ def get_data(filters):
 			diff=0
 			exp=0
 			values={}
-			parents=frappe.db.sql("""select distinct(si.parent) as parent from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' {1}""".format(item.get("batch"),condition),as_dict=1)
+			# parents=frappe.db.sql("""select distinct(si.parent) as parent from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' {1}""".format(item.get("batch"),condition),as_dict=1)
 			supervisor=""
-			for pa in parents:
+			# for pa in parents:
 
-				doc=frappe.get_doc("Stock Entry",pa.get("parent"))
+			doc=frappe.get_doc("Stock Entry",item.get("name"))
 				
-				for su in doc.supervisor:
-					employee_name=frappe.db.get_value("Employee",su.name1,"employee_name")
-					supervisor+=str(employee_name)+","
+			for su in doc.supervisor:
+				employee_name=frappe.db.get_value("Employee",su.name1,"employee_name")
+				supervisor+=str(employee_name)+","
+			
+			qty=0
+			for i in doc.items:
+				if i.is_finished_item==1:
+					if i.batch_no:
+						values.update({"batch":item.get("batch"),"rate":0})
+					else:
+						values.update({"batch":"MA","rate":0})
 
-				values.update({"batch":item.get("batch"),"rate":0})
-				qty=0
-				for i in doc.items:
-					if i.item_in_overall==0 and i.is_scrap_item==0 and i.is_finished_item==0:
-						qty+=i.qty					
-						
-						values.update({
-							str(i.item_name):flt(values.get(str(i.item_name)))+flt(i.get("qty")),
-						})
+				if i.item_in_overall==0 and i.is_scrap_item==0 and i.is_finished_item==0:
+					qty+=i.qty					
 					
-					if i.batch_no  and i.t_warehouse:
-						values.update({
-							"alloy":i.item_code
-						})
-					if i.is_finished_item:
-						finish_good+=i.qty
-				if i.item_in_overall and i.is_scrap_item:
-					reject+=i.qty
-				raw=flt(raw)+flt(doc.total_input_qty)
-				exp+=flt(doc.custom_total_expected_qty)
-				act+=flt(doc.total_in_over_qty)
-				diff=act-exp
+					values.update({
+						str(i.item_name):flt(values.get(str(i.item_name)))+flt(i.get("qty")),
+					})
+				
+				if i.batch_no  and i.t_warehouse:
+					values.update({
+						"alloy":i.item_code
+					})
+				if i.is_finished_item:
+					finish_good+=i.qty
+			if i.item_in_overall and i.is_scrap_item:
+				reject+=i.qty
+			raw=flt(raw)+flt(doc.total_input_qty)
+			exp+=flt(doc.custom_total_expected_qty)
+			act+=flt(doc.total_in_over_qty)
+			diff=act-exp
 			frate=0
 			rate=frappe.db.sql("""select avg(si.basic_rate) as rate  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' {1}""".format(item.get("batch"),condition),as_dict=1)
 			for ra in rate:
