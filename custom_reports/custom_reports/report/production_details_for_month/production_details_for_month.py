@@ -142,7 +142,7 @@ def get_data(filters):
 			for i in doc.items:
 				if i.is_finished_item==1:
 					if i.batch_no:
-						values.update({"batch":item.get("batch"),"rate":0})
+						values.update({"batch":i.get("batch_no"),"rate":0})
 					else:
 						values.update({"batch":"MA","rate":0})
 
