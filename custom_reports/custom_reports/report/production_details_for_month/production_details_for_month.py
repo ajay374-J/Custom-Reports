@@ -118,7 +118,6 @@ def get_data(filters):
 		if item.get("batch"):
 			raw=0
 			finish_good=0
-			recovery=0
 			act=0
 			reject=0
 			diff=0
@@ -148,13 +147,11 @@ def get_data(filters):
 						values.update({
 							"alloy":i.item_code
 						})
-					
-				rejected=frappe.db.sql("""select sum(si.qty) as qty  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' and se.name='{1}' and si.item_in_overall=1 and si.is_scrap_item=1 {2}""".format(item.get("batch"),pa.get("parent"),condition),as_dict=1)
-				if rejected:
-					rejects=rejected[0].get("qty")
+					if i.is_finished_item:
+						finish_good+=i.qty
+				if i.item_in_overall and i.is_scrap_item:
+					reject+=i.qty
 				raw=flt(raw)+flt(doc.total_input_qty)
-				finish_good=flt(finish_good)+flt(doc.total_output_qty)
-				reject+=flt(rejects)
 				exp+=flt(doc.custom_total_expected_qty)
 				act+=flt(doc.total_in_over_qty)
 				diff=act-exp

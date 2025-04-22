@@ -149,14 +149,17 @@ def get_data(filters):
 					# 	values.update({
 					# 		"alloy":i.item_code
 					# 	})
-					
-				rejected=frappe.db.sql("""select sum(si.qty) as qty  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1  and se.name='{0}' and si.item_in_overall=1 and si.is_scrap_item=1 {1}""".format(pa.get("parent"),condition),as_dict=1)
-				# item=frappe.db.get_value("")
-				if rejected:
-					rejects=rejected[0].get("qty")
+					if i.is_finished_item:
+							finish_good+=i.qty
+					if i.item_in_overall and i.is_scrap_item:
+						reject+=i.qty
+				# rejected=frappe.db.sql("""select sum(si.qty) as qty  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1  and se.name='{0}' and si.item_in_overall=1 and si.is_scrap_item=1 {1}""".format(pa.get("parent"),condition),as_dict=1)
+				# # item=frappe.db.get_value("")
+				# if rejected:
+				# 	rejects=rejected[0].get("qty")
 				raw=flt(raw)+flt(doc.total_input_qty)
-				finish_good=flt(finish_good)+flt(doc.total_output_qty)
-				reject+=flt(rejects)
+				finish_good=flt(finish_good)
+				reject+=flt(reject)
 				exp+=flt(doc.custom_total_expected_qty)
 				act+=flt(doc.total_in_over_qty)
 				diff=act-exp
