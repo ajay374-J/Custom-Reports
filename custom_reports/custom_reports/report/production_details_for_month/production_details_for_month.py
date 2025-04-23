@@ -229,7 +229,7 @@ def get_data(filters):
 		doc=frappe.get_doc("Stock Entry",jk.get("parent"))
 		for it in doc.items:
 			rate+=it.basic_rate
-		rate_dic[item] = rate
+		rate_dic[it.item_name] = rate
 	
 	data.append(rate_dic)
 	total_value={"batch":"<b>Total Value</b>"}
