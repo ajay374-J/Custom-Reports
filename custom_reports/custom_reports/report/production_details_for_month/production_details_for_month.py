@@ -225,7 +225,7 @@ def get_data(filters):
 	""".format(condition), as_dict=1)
 	parents=[]
 	for jk in rates:
-		parents.append(jk.get("parents"))
+		parents.append(jk.get("parent"))
 	value=""
 	if len(parents)>1:
 		parents=set(parents)
