@@ -118,7 +118,7 @@ def get_data(filters):
 	date=""
 	if filters.from_date and filters.to_date:
 		date+="and se.posting_date>='{0}' and se.posting_date<='{1}'".format(filters.from_date ,filters.to_date)
-	items=frappe.db.sql("""select distinct(si.item_code) as item from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.is_finished_item =1""".format(condition),as_dict=1)
+	items=frappe.db.sql("""select distinct(si.item_code) as item from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.is_finished_item =1 {0}""".format(condition),as_dict=1)
 	data=[]
 	for item in items:
 		if item.get("item"):
@@ -217,11 +217,10 @@ def get_data(filters):
 
 	
 	for jk in rates:
-		rate=0
 		doc=frappe.get_doc("Stock Entry",jk.get("parent"))
 		for it in doc.items:
-			rate+=it.basic_rate
-		rate_dic[it.item_name] = rate
+			rate=flt(rate_dic.get(it.item_name))+flt(it.basic_rate)
+			rate_dic[it.item_name] = rate
 	
 	data.append(rate_dic)
 	total_value={"fg_item":"<b>Total Value</b>","rate":0}
