@@ -208,22 +208,20 @@ def get_data(filters):
 	# If you want it as a regular dict:
 	result = dict(result)
 	data.append(result)
-	rate_dic={"fg_item":"<b>PRICE/MT</b>"}
+	rate_dic={"batch":"<b>PRICE/MT</b>","rate":0}
 	rates = frappe.db.sql("""
-    SELECT item_name, AVG(basic_rate) AS rate
-    FROM `tabStock Entry` se
+    SELECT distinct(si.parent) as parent from `tabStock Entry` se
     JOIN `tabStock Entry Detail` si ON se.name = si.parent
     WHERE se.stock_entry_type = 'Manufacture' AND se.docstatus = 1 {0}
-    GROUP BY item_name
-	""".format(date), as_dict=1)
+	""".format(condition), as_dict=1)
 
 
 	for jk in rates:
-		item = str(jk.get("item_name"))
-		rate = jk.get("rate") or 0
+		doc=frappe.get_doc("Stock Entry",jk.get("parent"))
+		for item in doc.items:
+			rate+=item.rate
 		rate_dic[item] = rate
-
-
+	
 	data.append(rate_dic)
 	total_value={"fg_item":"<b>Total Value</b>","rate":0}
 
