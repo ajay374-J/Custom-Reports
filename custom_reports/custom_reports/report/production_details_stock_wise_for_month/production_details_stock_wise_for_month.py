@@ -215,8 +215,9 @@ def get_data(filters):
     WHERE se.stock_entry_type = 'Manufacture' AND se.docstatus = 1 {0}
 	""".format(condition), as_dict=1)
 
-	rate=0
+	
 	for jk in rates:
+		rate=0
 		doc=frappe.get_doc("Stock Entry",jk.get("parent"))
 		for it in doc.items:
 			rate+=it.basic_rate
