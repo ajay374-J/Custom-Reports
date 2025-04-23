@@ -26,6 +26,12 @@ def get_columns(filters):
             "fieldtype": "Data",
             "fieldname": "fg_item",
             "width": 200,
+        },
+		 {
+            "label": frappe._("FG Item Name"),
+            "fieldtype": "Data",
+            "fieldname": "fg_item_name",
+            "width": 200,
         }
 	]
 	items=frappe.db.sql("""select distinct(si.item_name) as item_name from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1  and t_warehouse is NULL and si.item_in_overall=0 and si.is_scrap_item=0 and si.is_finished_item=0 {0}""".format(condition),as_dict=1)
@@ -131,7 +137,8 @@ def get_data(filters):
 			values={}
 			parents=frappe.db.sql("""select distinct(si.parent) as parent from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.item_code='{0}' and si.is_finished_item =1  {1}""".format(item.get("item"),condition),as_dict=1)
 			supervisor=""
-			values.update({"fg_item":item.get("item"),"rate":0})
+			item_name=frappe.db.get_value("Item",item.get("item"),"item_name")
+			values.update({"fg_item":item.get("item"),"fg_item_name":item_name,"rate":0})
 			for pa in parents:
 				
 				doc=frappe.get_doc("Stock Entry",pa.get("parent"))
@@ -165,7 +172,7 @@ def get_data(filters):
 				# 	rejects=rejected[0].get("qty")
 				raw=flt(raw)+flt(doc.total_input_qty)
 				finish_good=flt(finish_good)
-				reject+=flt(reject)
+				# reject+=flt(reject)
 				exp+=flt(doc.custom_total_expected_qty)
 				act+=flt(doc.total_in_over_qty)
 				diff=act-exp
@@ -214,13 +221,18 @@ def get_data(filters):
     JOIN `tabStock Entry Detail` si ON se.name = si.parent
     WHERE se.stock_entry_type = 'Manufacture' AND se.docstatus = 1 {0}
 	""".format(condition), as_dict=1)
-
-	
+	parents=()
 	for jk in rates:
-		doc=frappe.get_doc("Stock Entry",jk.get("parent"))
-		for it in doc.items:
-			rate=flt(rate_dic.get(it.item_name))+flt(it.basic_rate)
-			rate_dic[it.item_name] = rate
+		parents.append(jk.get("parent"))
+	avg_rates = frappe.db.sql("""SELECT item_name, AVG(basic_rate) AS rate
+    FROM `tabStock Entry` se
+    JOIN `tabStock Entry Detail` si ON se.name = si.parent
+    WHERE se.stock_entry_type = 'Manufacture' AND se.docstatus = 1  ans se.name in {0}
+    GROUP BY item_name""".format(parents),as_dict=1)
+	for jk in avg_rates:
+		item = str(jk.get("item_name"))
+		rate = jk.get("rate") or 0
+		rate_dic[item] = rate
 	
 	data.append(rate_dic)
 	total_value={"fg_item":"<b>Total Value</b>","rate":0}
