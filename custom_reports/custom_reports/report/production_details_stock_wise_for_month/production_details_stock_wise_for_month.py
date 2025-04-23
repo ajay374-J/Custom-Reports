@@ -217,26 +217,31 @@ def get_data(filters):
 	data.append(result)
 	rate_dic={"fg_item":"<b>PRICE/MT</b>","rate":0}
 	rates = frappe.db.sql("""
-    SELECT distinct(si.parent) as parent from `tabStock Entry` se
-    JOIN `tabStock Entry Detail` si ON se.name = si.parent
-    WHERE se.stock_entry_type = 'Manufacture' AND se.docstatus = 1 {0}
-	""".format(condition), as_dict=1)
-	parents=[]
-	for jk in rates:
-		parents.append(jk.get("parent"))
-	value=""
-	if len(parents)>1:
-		parents=set(parents)
-		value+=" and se.name in '{0}'".format(parents)
-
-	if len(parents)==1:
-		value+="and se.name ='{0}'".format(parents)
-
-	avg_rates = frappe.db.sql("""SELECT item_name, AVG(basic_rate) AS rate
+    SELECT DISTINCT si.parent AS parent 
     FROM `tabStock Entry` se
     JOIN `tabStock Entry Detail` si ON se.name = si.parent
     WHERE se.stock_entry_type = 'Manufacture' AND se.docstatus = 1 {0}
-    GROUP BY item_name""".format(value),as_dict=1)
+	""".format(condition), as_dict=1)
+
+	# Extract parent names
+	parents = [row.get("parent") for row in rates]
+
+	value = ""
+	if parents:
+		if len(parents) == 1:
+			value += " AND se.name = '{0}'".format(parents[0])
+		if len(parents)>1:
+			formatted = "', '".join(parents)
+			value += " AND se.name IN ('{0}')".format(formatted)
+
+	# Fetch average rates
+	avg_rates = frappe.db.sql("""
+		SELECT si.item_name, AVG(si.basic_rate) AS rate
+		FROM `tabStock Entry` se
+		JOIN `tabStock Entry Detail` si ON se.name = si.parent
+		WHERE se.stock_entry_type = 'Manufacture' AND se.docstatus = 1 {0}
+		GROUP BY si.item_name
+	""".format(value), as_dict=1)
 	for jk in avg_rates:
 		item = str(jk.get("item_name"))
 		rate = jk.get("rate") or 0
