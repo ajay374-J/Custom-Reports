@@ -114,6 +114,10 @@ def get_data(filters):
 		condition+="and se.posting_date>='{0}' and se.posting_date<='{1}'".format(filters.from_date ,filters.to_date)
 	if filters.item:
 		condition+="and si.item_code='{0}'".format(filters.item)
+
+	date=""
+	if filters.from_date and filters.to_date:
+		date+="and se.posting_date>='{0}' and se.posting_date<='{1}'".format(filters.from_date ,filters.to_date)
 	items=frappe.db.sql("""select distinct(si.item_code) as item from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.is_finished_item =1""".format(condition),as_dict=1)
 	data=[]
 	for item in items:
@@ -211,7 +215,7 @@ def get_data(filters):
     JOIN `tabStock Entry Detail` si ON se.name = si.parent
     WHERE se.stock_entry_type = 'Manufacture' AND se.docstatus = 1 {0}
     GROUP BY item_name
-	""".format(condition), as_dict=1)
+	""".format(date), as_dict=1)
 
 
 	for jk in rates:

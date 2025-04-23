@@ -53,6 +53,12 @@ def get_columns(filters):
             "width": 200,
         },
 		{
+            "label": frappe._("Alloy Name"),
+            "fieldtype": "Data",
+            "fieldname": "alloy_name",
+            "width": 200,
+        },
+		{
             "label": frappe._("Finished Good"),
             "fieldtype": "Float",
             "fieldname": "finish_total",
@@ -117,6 +123,11 @@ def get_data(filters):
 	if filters.batch:
 		condition+="and si.batch_no='{0}'".format(filters.batch)
 
+
+	date=""
+	if filters.from_date and filters.to_date:
+		date+="and se.posting_date>='{0}' and se.posting_date<='{1}'".format(filters.from_date ,filters.to_date)
+
 	items=frappe.db.sql("""select se.name  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.is_finished_item =1  {0}""".format(condition),as_dict=1)
 	data=[]
 	for item in items:
@@ -153,25 +164,28 @@ def get_data(filters):
 						str(i.item_name):flt(values.get(str(i.item_name)))+flt(i.get("qty")),
 					})
 				
-				if i.batch_no  and i.t_warehouse:
+				if i.is_finished_item  and i.t_warehouse:
 					values.update({
-						"alloy":i.item_code
+						"alloy":i.item_code,
+						"alloy_name":i.item_name
 					})
+				
 				if i.is_finished_item:
 					finish_good+=i.qty
-			if i.item_in_overall and i.is_scrap_item:
-				reject+=i.qty
+				rate=frappe.db.sql("""select avg(si.basic_rate) as rate  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' {1}""".format(i.get("batch_no"),condition),as_dict=1)
+				for ra in rate:
+					frate=flt(values.get("rate"))+flt(ra.get("rate"))
+					values.update({
+						"rate":frate
+					})
+				if i.item_in_overall and i.is_scrap_item:
+					reject+=i.qty
 			raw=flt(raw)+flt(doc.total_input_qty)
 			exp+=flt(doc.custom_total_expected_qty)
 			act+=flt(doc.total_in_over_qty)
 			diff=act-exp
 			frate=0
-			rate=frappe.db.sql("""select avg(si.basic_rate) as rate  from `tabStock Entry` se join `tabStock Entry Detail` si ON  se.name=si.parent where se.stock_entry_type='Manufacture' and se.docstatus=1 and si.batch_no='{0}' {1}""".format(item.get("batch"),condition),as_dict=1)
-			for ra in rate:
-				frate=flt(values.get("rate"))+flt(ra.get("rate"))
-				values.update({
-					"rate":frate
-				})
+			
 			values.update({
 				"total":raw,
 				"finish_total":finish_good,
@@ -210,7 +224,7 @@ def get_data(filters):
     JOIN `tabStock Entry Detail` si ON se.name = si.parent
     WHERE se.stock_entry_type = 'Manufacture' AND se.docstatus = 1 {0}
     GROUP BY item_name
-	""".format(condition), as_dict=1)
+	""".format(date), as_dict=1)
 
 
 	for jk in rates:
