@@ -225,7 +225,7 @@ def get_data(filters):
 	""".format(condition), as_dict=1)
 	parents=()
 	for jk in rates:
-		parents.append(jk.get("parent"))
+		parents=parents+(jk.get("parents"))
 	avg_rates = frappe.db.sql("""SELECT item_name, AVG(basic_rate) AS rate
     FROM `tabStock Entry` se
     JOIN `tabStock Entry Detail` si ON se.name = si.parent
