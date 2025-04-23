@@ -221,14 +221,22 @@ def get_data(filters):
     JOIN `tabStock Entry Detail` si ON se.name = si.parent
     WHERE se.stock_entry_type = 'Manufacture' AND se.docstatus = 1 {0}
 	""".format(condition), as_dict=1)
-	parents=()
+	parents=[]
 	for jk in rates:
-		parents=parents+(jk.get("parents"))
+		parents.append(jk.get("parents"))
+	value=""
+	if len(parents)>1:
+		parents=set(parents)
+		value+=" and se.name in {0}".format(parents)
+
+	if len(parents)==1:
+		value+="and se.name ={0}".format(parents)
+
 	avg_rates = frappe.db.sql("""SELECT item_name, AVG(basic_rate) AS rate
     FROM `tabStock Entry` se
     JOIN `tabStock Entry Detail` si ON se.name = si.parent
-    WHERE se.stock_entry_type = 'Manufacture' AND se.docstatus = 1  ans se.name in {0}
-    GROUP BY item_name""".format(parents),as_dict=1)
+    WHERE se.stock_entry_type = 'Manufacture' AND se.docstatus = 1 {0}
+    GROUP BY item_name""".format(value),as_dict=1)
 	for jk in avg_rates:
 		item = str(jk.get("item_name"))
 		rate = jk.get("rate") or 0
