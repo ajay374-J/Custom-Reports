@@ -227,10 +227,10 @@ def get_data(filters):
 	value=""
 	if len(parents)>1:
 		parents=set(parents)
-		value+=" and se.name in {0}".format(parents)
+		value+=" and se.name in '{0}'".format(parents)
 
 	if len(parents)==1:
-		value+="and se.name ={0}".format(parents)
+		value+="and se.name ='{0}'".format(parents)
 
 	avg_rates = frappe.db.sql("""SELECT item_name, AVG(basic_rate) AS rate
     FROM `tabStock Entry` se
