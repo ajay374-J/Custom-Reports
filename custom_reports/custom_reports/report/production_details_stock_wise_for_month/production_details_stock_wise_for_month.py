@@ -219,7 +219,7 @@ def get_data(filters):
 	for jk in rates:
 		doc=frappe.get_doc("Stock Entry",jk.get("parent"))
 		for item in doc.items:
-			rate+=item.rate
+			rate+=item.basic_rate
 		rate_dic[item] = rate
 	
 	data.append(rate_dic)

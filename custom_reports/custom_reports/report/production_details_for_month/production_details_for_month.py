@@ -150,6 +150,7 @@ def get_data(filters):
 				supervisor+=str(employee_name)+","
 			
 			qty=0
+			frate=0
 			for i in doc.items:
 				if i.is_finished_item==1:
 					if i.batch_no:
@@ -227,7 +228,7 @@ def get_data(filters):
 	for jk in rates:
 		doc=frappe.get_doc("Stock Entry",jk.get("parent"))
 		for item in doc.items:
-			rate+=item.rate
+			rate+=item.basic_rate
 		rate_dic[item] = rate
 	
 	data.append(rate_dic)
